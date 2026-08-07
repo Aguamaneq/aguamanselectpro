@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
 <script>/** @license
  *
  * jsPDF - PDF Document creation from JavaScript
@@ -506,7 +506,7 @@ body{
 .panel.active{display:block}
 @keyframes panelIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-.panel-title{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;letter-spacing:-.4px;margin:6px 2px 4px}
+.panel-title{font-family:'Manrope','Space Grotesk',sans-serif;font-size:24px;font-weight:700;letter-spacing:-.4px;margin:6px 2px 4px}
 .panel-note{font-size:12.5px;color:var(--ink3);margin:0 2px 18px;line-height:1.6}
 
 /* ================= CARDS ================= */
@@ -967,7 +967,7 @@ select option{background:var(--bg2);color:var(--ink)}
   <!-- ============ TAB 3 : INDUSTRIAL HIGH-TEMPERATURE ============ -->
   <section class="panel" id="panel-industrial">
     <h1 class="panel-title">Industrial High-Temp Selector</h1>
-    <p class="panel-note">Process hot water up to 70°C · APH Series (Air-source) · AMWS Series (Water-source) · R134a</p>
+    <p class="panel-note">Process hot water up to 80°C · APH Series (Air-source) · AMWS Series (Water-source) · R134a</p>
 
     <div class="form-duo">
       <div class="card">
@@ -1016,10 +1016,11 @@ select option{background:var(--bg2);color:var(--ink)}
       <div class="card">
         <div class="card-label">Temperature Inputs</div>
         <div class="temp-group">
-          <div class="field"><label>Inlet water Ti (°C)</label><input id="indTi" type="number" step="0.1" value="20"/></div>
-          <div class="field"><label>Target outlet To (°C) — max 70</label><input id="indTo" type="number" step="0.1" value="65"/></div>
+          <div class="field"><label id="indSrcTempLabel">Source temperature (°C)</label><input id="indSrcTemp" type="number" step="0.1" placeholder="select source first"/></div>
+          <div class="field"><label>Inlet / tank water Ti (°C)</label><input id="indTi" type="number" step="0.1" value="20"/></div>
+          <div class="field"><label>Target outlet To (°C) — max 80</label><input id="indTo" type="number" step="0.1" value="65"/></div>
         </div>
-        <p class="hint" id="indRatedNote" style="margin-top:12px;">Capacities are applied at catalogue rating conditions — shown in the report.</p>
+        <p class="hint" id="indRatedNote" style="margin-top:12px;">Capacities are corrected to your source and tank temperatures, calibrated to the catalogue rating point.</p>
       </div>
     </div>
 
@@ -1054,6 +1055,13 @@ select option{background:var(--bg2);color:var(--ink)}
       <div class="card">
         <div class="detail-col-label">Process Hot Water — Load Calculation</div>
         <div id="indDetail"></div>
+        <p class="hint" style="margin-top:10px;">The load depends only on the water: volume, temperature rise, and time. Source temperature does not change it.</p>
+      </div>
+
+      <div class="card">
+        <div class="detail-col-label">Machine Capacity Correction — Source &amp; Tank Temperature</div>
+        <div id="indCapDetail"></div>
+        <p class="hint" style="margin-top:10px;">How much each model actually delivers at your source and tank temperatures, relative to its catalogue rating. Selection matches this delivered capacity against the design load.</p>
       </div>
 
       <div class="card">
@@ -1065,11 +1073,11 @@ select option{background:var(--bg2);color:var(--ink)}
         <div class="card-label">Selected Model Data</div>
         <div class="table-scroll">
           <table class="gtable" id="indModelTable">
-            <thead><tr><th>Model</th><th>Capacity</th><th>Input kW</th><th>COP</th><th>Hot water L/h</th><th>Flow m³/h</th><th>Pipe</th></tr></thead>
+            <thead><tr><th>Model</th><th>Capacity*</th><th>Input kW</th><th>COP (est.)</th><th>Hot water L/h</th><th>Flow m³/h</th><th>Pipe</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="hint" style="margin-top:10px;">Ratings at the catalogue test conditions shown in the report.</p>
+        <p class="hint" style="margin-top:10px;">* Corrected to your source and tank temperatures (rated value in brackets). COP and L/h estimated at the same conditions.</p>
       </div>
 
       <div class="card"><div class="just" id="indJust"></div></div>
@@ -1611,7 +1619,7 @@ function genDom(){
 const HT={
   air:{
     key:'air', label:'Air-source high-temperature heat pump', series:'APH Series',
-    rated:'Water 20-65 °C · Ambient 20 °C DB / 15 °C WB', maxOut:70, ratedOut:65,
+    rated:'Water 20-65 °C · Ambient 20 °C DB / 15 °C WB', maxOut:80, ratedOut:65, tsR:20, tsMin:5, tsMax:53, srcName:'air',
     models:[
       {m:'APH013',cap:12.7,pw:4.1,  cop:3.09,flow:'4.0',  dn:'DN25'},
       {m:'APH018',cap:17.8,pw:5.8,  cop:3.06,flow:'5.0',  dn:'DN25'},
@@ -1630,7 +1638,7 @@ const HT={
   },
   water:{
     key:'water', label:'Water-source high-temperature heat pump', series:'AMWS Series',
-    rated:'Water 20-60 °C · Source water 12 °C', maxOut:70, ratedOut:60,
+    rated:'Water 20-60 °C · Source water 12 °C', maxOut:80, ratedOut:60, tsR:12, tsMin:5, tsMax:45, srcName:'source water',
     models:[
       {m:'AMWS012',cap:12.5,pw:2.7, cop:4.6, flow:'2.7', dn:'DN25',lph:239},
       {m:'AMWS020',cap:21,  pw:4.5, cop:4.6, flow:'4.5', dn:'DN25',lph:401},
@@ -1647,10 +1655,35 @@ const HT={
   }
 };
 const IND_FEAT={
-  air:{label:'Air-source high-temperature — APH Series',items:['Water temperature up to 70°C','Copeland compressor','Japan Saginomya EEV','Chlorine-resistant heat exchanger (open circuit)','R134A refrigerant','BMS RS485 interface','Designed for T3 condition (harsh weather)']},
+  air:{label:'Air-source high-temperature — APH Series',items:['Water temperature up to 80°C','Copeland compressor','Japan Saginomya EEV','Chlorine-resistant heat exchanger (open circuit)','R134A refrigerant','BMS RS485 interface','Designed for T3 condition (harsh weather)']},
   water:{label:'Water-source high-temperature — AMWS Series',items:['Saves up to 75% energy vs resistive heating','Copeland / Danfoss / Panasonic compressors','Japan Saginomya EEV','Chlorine-resistant heat exchanger','Power-off memory & auto defrosting','High discharge temperature sensor','R134A refrigerant']}
 };
 const AMB_PLANT=25, U_IND_TANK=1.5;
+
+/* ---- Temperature correction, calibrated to the catalogue rating point ---- */
+const IND_APPR={air:10,water:5}, IND_COND_APPR=5;
+function indRawC(src,Ts,Tw){
+  const Tev=Ts-IND_APPR[src], Tcd=Tw+IND_COND_APPR;
+  const gap=Math.max(15,Tcd-Tev);
+  return (Tcd+273.15)/gap;
+}
+function indHarm(f,a,b){
+  const N=24; let s=0;
+  for(let i=0;i<N;i++){ s+=1/f(a+(b-a)*(i+0.5)/N); }
+  return N/s;
+}
+function indFactors(src,Ts){
+  const cfg=HT[src];
+  const ref=indRawC(src,cfg.tsR,(20+cfg.ratedOut)/2);
+  const damp=r=>Math.min(1.3,Math.max(0.6,1+0.5*(r-1)));
+  const capRaw=T=>damp(indRawC(src,Ts,T)/ref);
+  const capRawRated=T=>damp(indRawC(src,cfg.tsR,T)/ref);
+  const norm=indHarm(capRawRated,20,cfg.ratedOut);
+  return {
+    capAt:T=>capRaw(T)/norm,
+    copAt:T=>{const r=indRawC(src,Ts,T)/ref;return Math.min(1.5,Math.max(0.6,1+0.7*(r-1)));}
+  };
+}
 
 function setIndMode(m){
   document.getElementById('indMode').value=m;
@@ -1659,6 +1692,12 @@ function setIndMode(m){
   document.querySelectorAll('.ind-batch').forEach(el=>el.style.display=m==='batch'?'block':'none');
   document.querySelectorAll('.ind-flow').forEach(el=>el.style.display=m==='flow'?'block':'none');
 }
+document.getElementById('indSource').addEventListener('change',e=>{
+  const v=e.target.value, lab=document.getElementById('indSrcTempLabel'), inp=document.getElementById('indSrcTemp');
+  if(v==='air'){ lab.textContent='Design air temperature (°C)'; inp.value=20; }
+  else if(v==='water'){ lab.textContent='Source water temperature (°C)'; inp.value=12; }
+  else { lab.textContent='Source temperature (°C)'; inp.value=''; }
+});
 
 function genInd(){
   const src=document.getElementById('indSource').value;
@@ -1667,20 +1706,29 @@ function genInd(){
   const t=parseFloat(document.getElementById('indTime').value)||0;
   const F=parseFloat(document.getElementById('indFlow').value)||0;
   const SF=parseFloat(document.getElementById('indSF').value)||1.10;
+  const Ts=parseFloat(document.getElementById('indSrcTemp').value);
   const Ti=parseFloat(document.getElementById('indTi').value);
   const To=parseFloat(document.getElementById('indTo').value);
 
   if(!src){toast('Select source of heating.');return;}
-  if([Ti,To].some(isNaN)){toast('Fill the temperature fields.');return;}
+  if([Ts,Ti,To].some(isNaN)){toast('Fill the temperature fields.');return;}
   if(To<=Ti){toast('Target outlet must be above inlet temperature.');return;}
   const cfg=HT[src];
   if(To>cfg.maxOut){toast(`Target exceeds the maximum ${cfg.maxOut}°C outlet of this range.`);return;}
+  if(Ts<cfg.tsMin||Ts>cfg.tsMax){toast(`${src==='air'?'Air':'Source water'} temperature must be within ${cfg.tsMin}-${cfg.tsMax}°C for this range.`);return;}
   if(mode==='batch'&&!(tankL>0&&t>0)){toast('Enter batch volume and heat-up time.');return;}
   if(mode==='flow'&&!(F>0)){toast('Enter the flow rate.');return;}
 
   window.ACTIVE={models:cfg.models};
+  const FX=indFactors(src,Ts);
   const dT=To-Ti;
-  let q1,qloss=0,rows,modeDesc;
+  let q1,qloss=0,rows,modeDesc,capbar,capStart,capEnd;
+  if(mode==='batch'){
+    capbar=indHarm(FX.capAt,Ti,To); capStart=FX.capAt(Ti); capEnd=FX.capAt(To);
+  }else{
+    capbar=FX.capAt(To); capStart=capbar; capEnd=capbar;
+  }
+  const copF=FX.copAt(mode==='batch'?(Ti+To)/2:To);
 
   if(mode==='batch'){
     const Vt=tankL/1000;
@@ -1704,7 +1752,16 @@ function genInd(){
     ];
   }
   const base=q1+qloss, P=base*SF;
-  const capOf=md=>md.cap;
+  const capRows = mode==='batch' ? [
+      {k:`Delivered capacity at batch start (tank ${Ti}°C, ${cfg.srcName} ${Ts}°C)`,v:'×'+capStart.toFixed(2)+' of rated'},
+      {k:'Delivered capacity — average over heat-up (used for selection)',v:'×'+capbar.toFixed(2)+' of rated',t:true},
+      {k:`Delivered capacity at target (tank ${To}°C)`,v:'×'+capEnd.toFixed(2)+' of rated'},
+      {k:'Estimated COP factor at these conditions',v:'×'+copF.toFixed(2)+' of rated'},
+    ] : [
+      {k:`Delivered capacity at operating point (${To}°C out, ${cfg.srcName} ${Ts}°C)`,v:'×'+capbar.toFixed(2)+' of rated',t:true},
+      {k:'Estimated COP factor at these conditions',v:'×'+copF.toFixed(2)+' of rated'},
+    ];
+  const capOf=md=>md.cap*capbar;
   const eff=efficientSel(P,capOf), eco=economicalSel(P,capOf);
 
   document.getElementById('indDate').textContent=new Date().toLocaleString();
@@ -1726,8 +1783,9 @@ function genInd(){
   }else{
     tbody.innerHTML=`<tr><td colspan="6" style="padding:20px;color:var(--ink3);text-align:center;">No feasible combination found within ${MAX_UNITS} units.</td></tr>`;
   }
-  document.getElementById('indCapNote').textContent=`${cfg.series} capacities at catalogue rating: ${cfg.rated}. Rated outlet ${cfg.ratedOut}°C, maximum ${cfg.maxOut}°C.`;
+  document.getElementById('indCapNote').textContent=`${cfg.series} model capacities corrected to ${cfg.srcName} ${Ts}°C and your tank temperatures — see Machine Capacity Correction below. Calibrated to the catalogue rating: ${cfg.rated}.`;
   document.getElementById('indDetail').innerHTML=drows(rows);
+  document.getElementById('indCapDetail').innerHTML=drows(capRows);
 
   document.getElementById('indStrip').innerHTML=`
     <div class="stat"><div class="sl">Heating load</div><div class="sv">${P.toFixed(1)}<span class="su">kW</span></div></div>
@@ -1739,11 +1797,11 @@ function genInd(){
   const chosen={};
   [eff,eco].forEach(sel=>{ if(sel) sel.models.forEach(m=>{ chosen[m.m]=m; }); });
   document.querySelector('#indModelTable tbody').innerHTML=Object.values(chosen).map(md=>
-    `<tr><td><b>${md.m}</b></td><td>${md.cap} kW</td><td>${md.pw}</td><td>${md.cop}</td><td>${lphOf(md)}</td><td>${md.flow}</td><td>${md.dn}</td></tr>`
+    `<tr><td><b>${md.m}</b></td><td>${(md.cap*capbar).toFixed(1)} kW (rated ${md.cap})</td><td>${md.pw}</td><td>${(md.cop*copF).toFixed(2)}</td><td>${Math.round(lphOf(md)*capbar)}</td><td>${md.flow}</td><td>${md.dn}</td></tr>`
   ).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--ink3);">—</td></tr>';
 
   const proj=document.getElementById('indProject').value.trim()||'this project';
-  let j=`For <b>${proj}</b> (${modeDesc.toLowerCase()}), the process requires <b>${kw(q1)}</b>${mode==='batch'?` plus <b>${kw(qloss)}</b> of standing loss from the insulated tank`:''}. With a design margin of ×${SF.toFixed(2)}, the required heating duty is <b>${kw(P)}</b> at ${To}°C outlet. The ${cfg.label} range (${cfg.series}) is rated at ${cfg.rated}; capacities are applied at these conditions and should be reviewed if site conditions differ significantly.`;
+  let j=`For <b>${proj}</b> (${modeDesc.toLowerCase()}), the process requires <b>${kw(q1)}</b>${mode==='batch'?` plus <b>${kw(qloss)}</b> of standing loss from the insulated tank`:''}. With a design margin of ×${SF.toFixed(2)}, the required heating duty is <b>${kw(P)}</b> at ${To}°C outlet. Unit capacities were corrected for a ${cfg.srcName} temperature of <b>${Ts}°C</b> and the ${mode==='batch'?`tank temperature rising from ${Ti}°C to ${To}°C (average capacity factor ×${capbar.toFixed(2)}, weakest ×${capEnd.toFixed(2)} near the target)`:`${To}°C operating temperature (capacity factor ×${capbar.toFixed(2)})`}, calibrated to the catalogue rating point (${cfg.rated}).`;
   if(eff)j+=` The efficient option (${cfgLabel(eff)}) minimises unit count while meeting the calculated duty.`;
   if(eco)j+=` The economical option (${cfgLabel(eco)}) targets a near-exact match within ±10 kW.`;
   j+=` <i>All selections should be verified by an Aguaman engineer prior to procurement.</i>`;
@@ -1758,8 +1816,9 @@ function genInd(){
     date:new Date().toLocaleString(),
     proj:document.getElementById('indProject').value.trim()||'—',
     src, srcLabel:cfg.label+' — '+cfg.series, rated:cfg.rated, ratedOut:cfg.ratedOut, maxOut:cfg.maxOut,
-    mode, modeDesc, tankL, t, F, SF, Ti, To, P, rows, eff, eco,
-    models:Object.values(chosen).map(md=>[md.m, md.cap+' kW', String(md.pw), String(md.cop), String(lphOf(md)), md.flow, md.dn]),
+    srcName:cfg.srcName, Ts, capbar, capStart, capEnd, copF,
+    mode, modeDesc, tankL, t, F, SF, Ti, To, P, rows, capRows, eff, eco,
+    models:Object.values(chosen).map(md=>[md.m, (md.cap*capbar).toFixed(1)+' kW ('+md.cap+')', String(md.pw), (md.cop*copF).toFixed(2), String(Math.round(lphOf(md)*capbar)), md.flow, md.dn]),
     just:j.replace(/<[^>]*>/g,''),
     features:feat
   };
@@ -2482,7 +2541,7 @@ async function indDownloadPDF(){
     doc.setFont(hasFonts?'Manrope':'helvetica','bold'); doc.setFontSize(17); doc.setTextColor(...TEAL);
     doc.text('Industrial High-Temperature Selection Report',MARGIN+21,y+5);
     doc.setFont(SANS,'normal'); doc.setFontSize(8); doc.setTextColor(...GRAY);
-    doc.text(R.src==='air'?'APH Series · Air-source · up to 70 °C':'AMWS Series · Water-source · up to 70 °C',MARGIN+21,y+10.5);
+    doc.text(R.src==='air'?'APH Series · Air-source · up to 80 °C':'AMWS Series · Water-source · up to 80 °C',MARGIN+21,y+10.5);
     doc.text(R.date,W-MARGIN,y+2,{align:'right'});
     doc.setFont(SANS,'bold'); doc.setTextColor(...INK);
     doc.text(String(R.proj),W-MARGIN,y+7,{align:'right'});
@@ -2504,6 +2563,7 @@ async function indDownloadPDF(){
     }else{
       inputRows.push(['Flow rate', R.F+' m³/h']);
     }
+    inputRows.push([R.src==='air'?'Design air temperature':'Source water temperature', R.Ts+' °C']);
     inputRows.push(['Temperatures', `Inlet ${R.Ti} °C  ·  Target outlet ${R.To} °C`]);
     inputRows.push(['Design margin', '×'+R.SF.toFixed(2)]);
     inputRows.push(['Catalogue rating', R.rated+`  ·  Rated outlet ${R.ratedOut} °C, max ${R.maxOut} °C`]);
@@ -2557,10 +2617,10 @@ async function indDownloadPDF(){
         R.eco.total>=R.P?'Near-exact match (±10 kW).':'Slightly undersized within tolerance.');
     }
     y+=2;
-    para(`Capacities applied at catalogue rating conditions: ${R.rated}.`,7.8);
+    para(`Capacities corrected to ${R.srcName} ${R.Ts} °C and the entered tank temperatures (average factor ×${R.capbar.toFixed(2)}), calibrated to the catalogue rating point: ${R.rated}.`,7.8);
 
     // 4. Calculation detail
-    heading('Calculation Detail');
+    heading('Load Calculation (water side only)');
     pageBreak(R.rows.length*5.6+6);
     doc.setFontSize(8.4);
     R.rows.forEach(r=>{
@@ -2572,6 +2632,22 @@ async function indDownloadPDF(){
       y+=5.6;
     });
     y+=4;
+
+    // 4b. Machine capacity correction
+    heading('Machine Capacity Correction - Source & Tank Temperature');
+    pageBreak(R.capRows.length*5.6+6);
+    doc.setFontSize(8.4);
+    R.capRows.forEach(r=>{
+      doc.setFont(SANS,r.t?'bold':'normal'); doc.setTextColor(...(r.t?INK:GRAY));
+      doc.text(r.k,MARGIN,y);
+      doc.setFont(SANS,'bold'); doc.setTextColor(...(r.t?TEAL:INK));
+      doc.text(r.v,MARGIN+MAXW,y,{align:'right'});
+      doc.setDrawColor(228,233,236); doc.setLineWidth(0.2); doc.line(MARGIN,y+1.6,MARGIN+MAXW,y+1.6);
+      y+=5.6;
+    });
+    y+=2;
+    para('The heat load depends only on the water (volume, temperature rise, time). The source temperature changes what each machine delivers; the selection matches delivered capacity against the design load.',7.8);
+    y+=2;
 
     // 5. Design loads
     heading('Design Loads');
@@ -2593,7 +2669,7 @@ async function indDownloadPDF(){
       heading('Selected Model Data');
       const mcols=[28,24,22,18,28,26,22], mcx=[];
       mcols.reduce((a,c,i)=>{mcx[i]=a;return a+c;},MARGIN);
-      const mheads=['Model','Capacity','Input kW','COP','Hot water L/h','Flow m³/h','Pipe'];
+      const mheads=['Model','Capacity*','Input kW','COP (est.)','Hot water L/h','Flow m³/h','Pipe'];
       pageBreak(12);
       doc.setFont(SANS,'bold'); doc.setFontSize(7.4); doc.setTextColor(...TEAL);
       mheads.forEach((h,i)=>doc.text(h.toUpperCase(),mcx[i]+1,y));
@@ -2609,7 +2685,7 @@ async function indDownloadPDF(){
         y+=5.4;
       });
       y+=2;
-      para('Ratings at the catalogue test conditions stated above.',7.8);
+      para('* Corrected to the entered source and tank temperatures; rated value in brackets. COP and hot water production estimated at the same conditions.',7.8);
     }
 
     // 7. Justification
@@ -2632,7 +2708,7 @@ async function indDownloadPDF(){
 
     // 9. Method & assumptions
     heading('Method & Assumptions');
-    para('Batch heat-up load q₁ = m·Cp·(temperature rise)/t with water density 998 kg/m³ and Cp 4.1868 kJ/kg·K; tank standing loss assumes an insulated cylindrical tank (height equal to diameter, U = 1.5 W/m²K) in a 25 °C plant room. Continuous flow load q = m·Cp·(outlet minus inlet temperature) at the entered flow rate. The total, multiplied by the design margin, gives the required heating duty. Unit capacities are applied at the catalogue rating conditions stated in this report; output and COP will vary at other water and source temperatures, and selections near the maximum 70 °C outlet should be reviewed with Aguaman engineering.');
+    para('Batch heat-up load q₁ = m·Cp·(temperature rise)/t with water density 998 kg/m³ and Cp 4.1868 kJ/kg·K; tank standing loss assumes an insulated cylindrical tank (height equal to diameter, U = 1.5 W/m²K) in a 25 °C plant room. Continuous flow load q = m·Cp·(outlet minus inlet temperature) at the entered flow rate. The total, multiplied by the design margin, gives the required heating duty. Unit capacity and COP are corrected for the entered source and tank water temperatures using a refrigeration-cycle (Carnot-ratio) model anchored to the catalogue rating point: evaporating temperature is taken as the source temperature minus a 10 K approach (air) or 5 K approach (water), condensing temperature as the water temperature plus 5 K; the capacity swing is damped to 50% of the theoretical variation and limited to 0.60-1.30 of rating, and for batch duty the capacity is averaged (harmonically) over the rising tank temperature so the heat-up time is genuinely met. At the catalogue rating conditions the model reproduces the printed figures exactly. Selections near the maximum 80 °C outlet or at extreme source temperatures should be reviewed with Aguaman engineering.');
 
     // 10. Disclaimer
     heading('Disclaimer');
