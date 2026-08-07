@@ -1,0 +1,16 @@
+{
+  "name": "Aguaman SelectPro",
+  "short_name": "SelectPro",
+  "description": "Heat pump selection tools by Aguaman: pool heating & cooling, domestic water chillers, industrial high-temperature heat pumps, and ROI analysis — with engineered PDF reports.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#dbe4ff",
+  "theme_color": "#3d6bff",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
